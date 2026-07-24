@@ -9,7 +9,7 @@ import {
 
 export default function Dashboard() {
   const [filter, setFilter] = useState("");
-  const [expanded, setExpanded] = useState({});
+  const [expanded, setExpanded] = useState(null);
 
   const filtered = useMemo(() => {
     const q = filter.toLowerCase().trim();
@@ -23,189 +23,188 @@ export default function Dashboard() {
     );
   }, [filter]);
 
-  const toggle = (name) => {
-    setExpanded((prev) => ({ ...prev, [name]: !prev[name] }));
-  };
-
   const totalSourceSize = shapers.reduce(
     (sum, s) => sum + s.files.reduce((a, f) => a + f.size, 0),
     0
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
+    <div className="min-h-screen bg-[#F1E9D8] text-neutral-900">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-5 py-5">
-          <div className="flex items-start justify-between gap-4">
+      <header className="border-b border-[#e0d4bc]">
+        <div className="max-w-6xl mx-auto px-6 py-10">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            HarfBuzz Observatory
+          </h1>
+          <p className="mt-2 text-neutral-600 max-w-2xl text-[15px] leading-relaxed">
+            Every dedicated shaping module in HarfBuzz, organized by writing system.
+            Evidence of implementation attention for complex scripts — not a language support claim.
+          </p>
+
+          {/* Compact stats row */}
+          <div className="mt-8 flex flex-wrap gap-x-10 gap-y-3 text-sm">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                HarfBuzz Observatory
-              </h1>
-              <p className="mt-1 text-sm text-slate-500">
-                Script-based implementation modules of the HarfBuzz text shaping engine
-              </p>
+              <span className="text-neutral-500">Modules</span>{" "}
+              <span className="font-medium tabular-nums">{shapers.length}</span>
             </div>
-            <a
-              href={metadata.repository_url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs text-slate-400 hover:text-slate-600 underline shrink-0 mt-1"
-            >
-              GitHub
-            </a>
+            <div>
+              <span className="text-neutral-500">Source files</span>{" "}
+              <span className="font-medium tabular-nums">{metadata.shaper_source_file_count}</span>
+            </div>
+            <div>
+              <span className="text-neutral-500">Repo files</span>{" "}
+              <span className="font-medium tabular-nums">{metadata.repository_file_count.toLocaleString()}</span>
+            </div>
+            <div>
+              <span className="text-neutral-500">Test files</span>{" "}
+              <span className="font-medium tabular-nums">{metadata.test_file_count.toLocaleString()}</span>
+            </div>
+            <div>
+              <span className="text-neutral-500">Source size</span>{" "}
+              <span className="font-medium tabular-nums">{formatBytes(totalSourceSize)}</span>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-5 py-8 space-y-8">
-        {/* Metrics */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Metric label="Repo Files" value={metadata.repository_file_count.toLocaleString()} />
-          <Metric label="Shaper Modules" value={shapers.length} />
-          <Metric label="Test Files" value={metadata.test_file_count.toLocaleString()} />
-          <Metric label="Source Size" value={formatBytes(totalSourceSize)} />
-        </section>
-
-        {/* Why this matters */}
-        <section className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
-          <h2 className="font-semibold text-slate-900">Why this matters for digital language inclusion</h2>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            HarfBuzz is the open-source engine that correctly shapes complex writing systems on most of the world’s devices (Chrome, Firefox, Android, LibreOffice, etc.). 
-            Scripts that only have a generic “default” path receive far less specialized handling than those with dedicated complex shapers (Arabic, Indic, USE, Khmer, Myanmar…). 
-            This observatory surfaces the actual implementation modules so we can see which writing systems receive dedicated engineering attention.
-          </p>
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900 leading-relaxed">
-            <strong>Note:</strong> {metadata.methodological_note}
-          </div>
-        </section>
-
-        {/* Filter */}
-        <section className="flex flex-col sm:flex-row sm:items-center gap-3">
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        {/* Search */}
+        <div className="mb-6 flex items-center gap-4">
           <input
-            type="text"
+            type="search"
             placeholder="Filter by script, family, or related writing system…"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="flex-1 px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full max-w-md px-3.5 py-2 text-sm border border-[#d4c6a8] rounded-md bg-[#faf6ed] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-transparent"
           />
-          <span className="text-sm text-slate-500 shrink-0">
-            {filtered.length} of {shapers.length} modules
+          <span className="text-sm text-neutral-500 tabular-nums shrink-0">
+            {filtered.length} shown
           </span>
-        </section>
+        </div>
 
-        {/* Cards */}
-        <section className="space-y-3">
-          {filtered.map((shaper) => {
+        {/* Table-like list */}
+        <div className="border border-[#d4c6a8] rounded-lg overflow-hidden bg-[#faf6ed]">
+          {/* Table header */}
+          <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2.5 bg-[#efe6d2] border-b border-[#d4c6a8] text-xs font-medium text-neutral-500 uppercase tracking-wide">
+            <div className="col-span-3">Module</div>
+            <div className="col-span-2">Family</div>
+            <div className="col-span-2">Complexity</div>
+            <div className="col-span-2 text-right">Files</div>
+            <div className="col-span-2 text-right">Size</div>
+            <div className="col-span-1"></div>
+          </div>
+
+          {filtered.map((shaper, idx) => {
             const totalSize = shaper.files.reduce((sum, f) => sum + f.size, 0);
-            const isOpen = expanded[shaper.name];
+            const isOpen = expanded === shaper.name;
 
             return (
-              <article
-                key={shaper.name}
-                className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm"
-              >
+              <div key={shaper.name} className={idx !== 0 ? "border-t border-[#e5d9c4]" : ""}>
                 <button
-                  onClick={() => toggle(shaper.name)}
-                  className="w-full text-left px-5 py-4 hover:bg-slate-50 transition-colors"
+                  onClick={() => setExpanded(isOpen ? null : shaper.name)}
+                  className="w-full text-left px-4 py-3.5 hover:bg-[#f3ead8] transition-colors"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-slate-900 capitalize text-lg">
-                          {shaper.name}
-                        </h3>
-                        <span
-                          className={`text-xs font-medium px-2 py-0.5 rounded-full ${getComplexityColor(
-                            shaper.complexity
-                          )}`}
-                        >
-                          {shaper.complexity}
-                        </span>
-                      </div>
-                      <p className="text-sm text-slate-500 mt-0.5">{shaper.family}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-4 items-center">
+                    <div className="sm:col-span-3">
+                      <span className="font-medium capitalize">{shaper.name}</span>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-slate-500 shrink-0">
-                      <span>{shaper.files.length} files</span>
-                      <span>{formatBytes(totalSize)}</span>
-                      <span className="text-slate-400">{isOpen ? "▲" : "▼"}</span>
+                    <div className="sm:col-span-2 text-sm text-neutral-500">
+                      {shaper.family}
+                    </div>
+                    <div className="sm:col-span-2">
+                      <span
+                        className={`inline-block text-xs font-medium px-2 py-0.5 rounded ${getComplexityColor(
+                          shaper.complexity
+                        )}`}
+                      >
+                        {shaper.complexity}
+                      </span>
+                    </div>
+                    <div className="sm:col-span-2 sm:text-right text-sm tabular-nums text-neutral-600">
+                      {shaper.files.length}
+                    </div>
+                    <div className="sm:col-span-2 sm:text-right text-sm tabular-nums text-neutral-600">
+                      {formatBytes(totalSize)}
+                    </div>
+                    <div className="sm:col-span-1 sm:text-right text-neutral-400 text-sm">
+                      {isOpen ? "−" : "+"}
                     </div>
                   </div>
 
-                  <p className="mt-2 text-sm text-slate-600 leading-snug">
+                  <p className="mt-1.5 text-sm text-neutral-500 sm:hidden line-clamp-2">
                     {shaper.description}
                   </p>
-
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {shaper.related_scripts.map((s) => (
-                      <span
-                        key={s}
-                        className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded"
-                      >
-                        {s}
-                      </span>
-                    ))}
-                  </div>
                 </button>
 
                 {isOpen && (
-                  <div className="border-t border-slate-100 bg-slate-50 px-5 py-3">
-                    <ul className="space-y-1.5">
+                  <div className="px-4 pb-4 bg-[#f3ead8] border-t border-[#e5d9c4]">
+                    <p className="text-sm text-neutral-600 pt-3 pb-3 leading-relaxed">
+                      {shaper.description}
+                    </p>
+
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {shaper.related_scripts.map((s) => (
+                        <span
+                          key={s}
+                          className="text-xs bg-[#F1E9D8] border border-[#d4c6a8] text-neutral-600 px-2 py-0.5 rounded"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="space-y-1">
                       {shaper.files.map((f) => (
-                        <li
+                        <div
                           key={f.path}
-                          className="flex items-center justify-between gap-3 text-sm"
+                          className="flex items-center justify-between gap-3 text-sm py-1"
                         >
                           <a
                             href={getGithubUrl(f.path)}
                             target="_blank"
                             rel="noreferrer"
-                            className="font-mono text-blue-600 hover:underline truncate"
+                            className="font-mono text-[13px] text-blue-700 hover:underline truncate"
                           >
                             {f.path}
                           </a>
-                          <span className="text-slate-500 shrink-0">
+                          <span className="text-neutral-500 tabular-nums shrink-0 text-xs">
                             {formatBytes(f.size)}
                           </span>
-                        </li>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
-              </article>
+              </div>
             );
           })}
 
           {filtered.length === 0 && (
-            <div className="text-center py-12 text-slate-400 text-sm">
+            <div className="px-4 py-16 text-center text-sm text-neutral-400">
               No modules match “{filter}”
             </div>
           )}
-        </section>
+        </div>
+
+        {/* Note */}
+        <p className="mt-6 text-xs text-neutral-500 leading-relaxed max-w-3xl">
+          {metadata.methodological_note}
+        </p>
 
         {/* Footer */}
-        <footer className="pt-4 pb-8 text-center text-xs text-slate-400">
+        <footer className="mt-10 pt-6 border-t border-[#e0d4bc] text-xs text-neutral-500">
           Data from{" "}
           <a
             href={metadata.repository_url}
             target="_blank"
             rel="noreferrer"
-            className="underline hover:text-slate-600"
+            className="underline hover:text-neutral-700"
           >
             {metadata.repository}
           </a>{" "}
-          @ {metadata.commit_sha.slice(0, 7)} · IDLI / SILICON Week 4
+          @ {metadata.commit_sha.slice(0, 7)} · IDLI / SILICON
         </footer>
       </main>
-    </div>
-  );
-}
-
-function Metric({ label, value }) {
-  return (
-    <div className="bg-white border border-slate-200 rounded-xl px-4 py-4 shadow-sm">
-      <div className="text-xs text-slate-500 font-medium">{label}</div>
-      <div className="mt-1 text-xl font-bold text-slate-900 tabular-nums">{value}</div>
     </div>
   );
 }
